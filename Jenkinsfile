@@ -58,27 +58,23 @@ pipeline {
         }
 
         stage('deploy_dev') {
-            when {
-                expression { params.select_environment == 'dev' }
-                beforeAgent true
-            }
+    when {
+        expression { params.select_environment == 'dev' }
+        beforeAgent true
+    }
 
-            agent {
-                label 'DevServer'
-            }
+    agent { label 'DevServer' }
 
-            steps {
-                echo "Deploying to Dev Environment"
+    steps {
+        dir('/var/www/html') {
+            unstash 'maven-build'
 
-                dir('/home/ubuntu/deploy') {
-                    unstash 'maven-build'
-
-                    sh '''
-                    ls -l
-                    java -jar my-app-1.0-SNAPSHOT.jar &
-                    '''
-                }
-            }
+            sh '''
+            rm -rf *
+            jar -xvf webapp.war
+            '''
         }
+    }
+}
     }
 }
