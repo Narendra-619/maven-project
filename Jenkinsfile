@@ -17,3 +17,6 @@ tools {
             archiveArtifacts artifacts: '**/target/*.jar'
   }
 }
+        }
+    }
+}
