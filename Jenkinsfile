@@ -1,22 +1,23 @@
 pipeline {
     agent {
-  label 'DevServer'
-}
-tools {
-  maven 'mymaven'
-}
+        label 'DevServer'
+    }
 
+    tools {
+        maven 'mymaven'
+    }
 
     stages {
         stage('build') {
             steps {
-                sh "mvn clean package"
+                sh 'mvn clean package'
             }
+
             post {
-  success {
-            archiveArtifacts artifacts: '**/target/*.jar'
-  }
-}
+                success {
+                    archiveArtifacts artifacts: '**/target/*.jar'
+                }
+            }
         }
     }
 }
