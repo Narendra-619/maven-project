@@ -1,3 +1,4 @@
+
 pipeline {
     agent {
         label 'DevServer'
@@ -48,9 +49,7 @@ pipeline {
 
             post {
                 success {
-                    dir('target') {
-                        stash name: 'maven-build', includes: '*.jar'
-                    }
+                    stash name: 'frontend-build', includes: '**/*'
                 }
             }
         }
@@ -67,14 +66,16 @@ pipeline {
 
             steps {
                 dir('/home/ubuntu/deploy') {
-                    unstash 'maven-build'
+                    unstash 'frontend-build'
 
                     sh '''
                         ls -l
-                        java -jar my-app-1.0-SNAPSHOT.jar
+                        sudo cp -r * /var/www/html/
+                        sudo systemctl restart apache2
                     '''
                 }
             }
         }
     }
 }
+
