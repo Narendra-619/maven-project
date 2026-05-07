@@ -5,9 +5,13 @@ pipeline {
 
     parameters {
         choice(
-            choices: ['dev', 'prod'],
-            name: 'select_environment'
+            name: 'select_environment',
+            choices: ['dev', 'prod']
         )
+    }
+
+    environment {
+        NAME = "Messi"
     }
 
     tools {
@@ -16,25 +20,27 @@ pipeline {
 
     stages {
 
-        stage('Build') {
+        stage('build') {
             steps {
                 sh 'mvn clean package -DskipTests=true'
             }
         }
 
-        stage('Test') {
+        stage('test') {
             parallel {
 
-                stage('TestA') {
+                stage('testA') {
+                    agent { label 'DevServer' }
                     steps {
-                        echo "Running Test A"
+                        echo "This is test A"
                         sh 'mvn test'
                     }
                 }
 
-                stage('TestB') {
+                stage('testB') {
+                    agent { label 'DevServer' }
                     steps {
-                        echo "Running Test B"
+                        echo "This is test B+"
                         sh 'mvn test'
                     }
                 }
@@ -42,31 +48,33 @@ pipeline {
 
             post {
                 success {
-                    dir('webapp/target') {
-                        stash name: 'maven-build', includes: '*.war'
+                    dir('target') {
+                        stash name: 'maven-build', includes: '*.jar'
                     }
                 }
             }
         }
-        stage('Deploy Dev') {
-    when {
-        expression { params.select_environment == 'dev' }
-    }
 
-    steps {
-        dir('/home/ubuntu/deploy') {
-            unstash 'maven-build'
+        stage('deploy_dev') {
+            when {
+                expression { params.select_environment == 'dev' }
+                beforeAgent true
+            }
 
-            sh '''
-                ls -l
-                mv *.war webapp.war
-                rm -rf WEB-INF META-INF *.jsp
+            agent {
+                label 'DevServer'
+            }
 
-                jar -xvf webapp.war
-            '''
+            steps {
+                dir('/home/ubuntu/deploy') {
+                    unstash 'maven-build'
+
+                    sh '''
+                        ls -l
+                        java -jar my-app-1.0-SNAPSHOT.jar
+                    '''
+                }
+            }
         }
-    }
-}
-        
     }
 }
