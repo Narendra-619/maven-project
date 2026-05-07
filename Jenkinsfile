@@ -5,13 +5,9 @@ pipeline {
 
     parameters {
         choice(
-            name: 'select_environment',
-            choices: ['dev', 'prod']
+            choices: ['dev', 'prod'],
+            name: 'select_environment'
         )
-    }
-
-    environment {
-        NAME = "Messi"
     }
 
     tools {
@@ -20,27 +16,25 @@ pipeline {
 
     stages {
 
-        stage('build') {
+        stage('Build') {
             steps {
                 sh 'mvn clean package -DskipTests=true'
             }
         }
 
-        stage('test') {
+        stage('Test') {
             parallel {
 
-                stage('testA') {
-                    agent { label 'DevServer' }
+                stage('TestA') {
                     steps {
-                        echo "This is test A"
+                        echo "Running Test A"
                         sh 'mvn test'
                     }
                 }
 
-                stage('testB') {
-                    agent { label 'DevServer' }
+                stage('TestB') {
                     steps {
-                        echo "This is test B+"
+                        echo "Running Test B"
                         sh 'mvn test'
                     }
                 }
@@ -48,21 +42,16 @@ pipeline {
 
             post {
                 success {
-                    dir('target') {
-                        stash name: 'maven-build', includes: '*.jar'
+                    dir('webapp/target') {
+                        stash name: 'maven-build', includes: '*.war'
                     }
                 }
             }
         }
 
-        stage('deploy_dev') {
+        stage('Deploy Dev') {
             when {
                 expression { params.select_environment == 'dev' }
-                beforeAgent true
-            }
-
-            agent {
-                label 'DevServer'
             }
 
             steps {
@@ -70,8 +59,8 @@ pipeline {
                     unstash 'maven-build'
 
                     sh '''
-                        ls -l
-                        java -jar my-app-1.0-SNAPSHOT.jar
+                        rm -rf *
+                        jar -xvf *.war
                     '''
                 }
             }
