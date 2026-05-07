@@ -48,22 +48,25 @@ pipeline {
                 }
             }
         }
-
         stage('Deploy Dev') {
-            when {
-                expression { params.select_environment == 'dev' }
-            }
+    when {
+        expression { params.select_environment == 'dev' }
+    }
 
-            steps {
-                dir('/home/ubuntu/deploy') {
-                    unstash 'maven-build'
+    steps {
+        dir('/home/ubuntu/deploy') {
+            unstash 'maven-build'
 
-                    sh '''
-                        rm -rf *
-                        jar -xvf *.war
-                    '''
-                }
-            }
+            sh '''
+                ls -l
+                mv *.war webapp.war
+                rm -rf WEB-INF META-INF *.jsp
+
+                jar -xvf webapp.war
+            '''
         }
+    }
+}
+        
     }
 }
