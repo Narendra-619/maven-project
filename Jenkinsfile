@@ -1,4 +1,4 @@
-
+```groovy
 pipeline {
     agent {
         label 'DevServer'
@@ -23,6 +23,10 @@ pipeline {
 
         stage('build') {
             steps {
+                script {
+                    file = load "script.groovy"
+                    file.hello()
+                }
                 sh 'mvn clean package -DskipTests=true'
             }
         }
@@ -69,13 +73,40 @@ pipeline {
                     unstash 'frontend-build'
 
                     sh '''
-                        ls -l
-                        sudo cp -r * /var/www/html/
+                        sudo rm -rf /var/www/html/*
+                        sudo cp -r src/main/webapp/* /var/www/html/
                         sudo systemctl restart apache2
                     '''
                 }
             }
         }
+
+        stage('deploy_prod') {
+            when {
+                expression { params.select_environment == 'prod' }
+                beforeAgent true
+            }
+
+            agent {
+                label 'ProdServer'
+            }
+
+            steps {
+                timeout(time: 5, unit: "DAYS") {
+                    input message: 'Deployment approved?'
+
+                    dir('/home/ubuntu/deploy') {
+                        unstash 'frontend-build'
+
+                        sh '''
+                            sudo rm -rf /var/www/html/*
+                            sudo cp -r src/main/webapp/* /var/www/html/
+                            sudo systemctl restart apache2
+                        '''
+                    }
+                }
+            }
+        }
     }
 }
-
+```
